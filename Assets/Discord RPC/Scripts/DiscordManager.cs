@@ -171,7 +171,6 @@ public class DiscordManager : MonoBehaviour
 #if (UNITY_WSA || UNITY_WSA_10_0 || UNITY_STANDALONE) && !DISABLE_DISCORD
 
         if (!active) return;                //Are we allowed to be active?
-        if (!Application.isPlaying) return; //We are not allowed to initialize while in the editor.
 
         //This has a instance already that isn't us
         if (_instance != null && _instance != this)
