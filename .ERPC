@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <ERPCSettings xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <details>editor-discord-rpc</details>
-  <state>lr</state>
+  <state />
   <largeImageKey>ab</largeImageKey>
   <largeImageText>Arthur Blue</largeImageText>
   <smallImageKey>unity</smallImageKey>

@@ -1,21 +1,18 @@
 ﻿#if UNITY_EDITOR
 using System;
-using System.IO;
-using System.Collections;
-using System.Collections.Generic;
-using System.Xml;
-using System.Xml.Serialization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEditor;
 using DiscordRPC;
+using DiscordRPC.Logging;
+using DiscordRPC.Unity;
 
 namespace ERPC
 {
     [InitializeOnLoad]
-    public class ERPC
+    public static class ERPC
     {
-        public static DiscordRpcClient Client { get; private set; }
+        public static DiscordRpcClient client;
 
         public static string projectName;
         public static string sceneName;
@@ -24,16 +21,22 @@ namespace ERPC
 
         public static string details;
         public static string state;
-        public static string largeImageKey;
-        public static string largeImageText;
-        public static string smallImageKey;
-        public static string smallImageText;
+        public static string largeImageKey = "ab";
+        public static string largeImageText = "Arthur Blue";
+        public static string smallImageKey = "unity";
+        public static string smallImageText = "Made with Unity";
+        public static string button1Text = "Itch.io";
+        public static string button1Url = "https://tarsier.itch.io/";
+        public static string button2Text = "GitHub";
+        public static string button2Url = "https://github.com/fenwikk/unity-discord-rpc/";
 
         public static DateTime start;
 
-        public static bool resetOnSceneChange = true;
+        public static bool resetOnSceneChange = false;
 
         public static DiscordPipe targetPipe = DiscordPipe.FirstAvailable;
+
+        public static LogLevel logLevel = LogLevel.Warning;
 
         public static double lastEdit;
 
@@ -61,18 +64,26 @@ namespace ERPC
             sceneName = SceneManager.GetActiveScene().name;
 
             EditorApplication.update += Update;
-            SceneManager.sceneLoaded += SceneLoaded;
 
-            start = DateTime.UtcNow;
+            start = GetTimeStamp();
 
-            if (!EditorApplication.isPlaying == false && Client == null) Initialize();
-            ERPCSettings.GetSettings();
+            Initialize();
         }
 
         static void Update()
         {
-            if (!EditorApplication.isPlaying && Client == null) Initialize();
-            if (EditorApplication.isPlaying && Client != null) Deinitialize();
+            if (!EditorApplication.isPlaying == false && client == null)
+            {
+                Initialize();
+            }
+
+            if (sceneName != SceneManager.GetActiveScene().name)
+            {
+                sceneName = SceneManager.GetActiveScene().name;
+                SceneLoaded();
+            }
+
+            client.Logger.Level = logLevel;
 
             projectName = Application.productName;
             sceneName = SceneManager.GetActiveScene().name;
@@ -80,6 +91,7 @@ namespace ERPC
             if (EditorApplication.timeSinceStartup >= lastEdit + 5 && EditorApplication.timeSinceStartup <= lastEdit + 10)
             {
                 UpdateActivity();
+                
                 ERPCWindow.status = "Up to date";
 
                 lastEdit = 0f;
@@ -88,36 +100,37 @@ namespace ERPC
 
         static void SceneLoaded(Scene scene = new Scene(), LoadSceneMode mode = new LoadSceneMode())
         {
-            UpdateActivity();
+            Debug.Log("Scene Loaded");
 
-            if (resetOnSceneChange)
-            {
-                start = DateTime.UtcNow;
-            }
+            projectName = Application.productName;
+            sceneName = SceneManager.GetActiveScene().name;
+            start = GetTimeStamp();
+            UpdateActivity();
         }
 
         public static void Initialize()
         {
-            Debug.Log("[ERP] Creating Client");
-            Client = new DiscordRpcClient(
+            Debug.Log("[ERP] Init");
+
+            //Prepare the logger
+            DiscordRPC.Logging.ILogger logger = null;
+
+            //Update the logger to the unity logger
+            if (Debug.isDebugBuild) logger = new FileLogger("discordrpc.log") { Level = logLevel };
+            if (Application.isEditor) logger = new UnityLogger() { Level = logLevel };
+
+            client = new DiscordRpcClient(
                 applicationID,                                  //The Discord Application ID            
                 pipe: (int)targetPipe,                          //The target pipe to connect too
-                client: new DiscordRPC.Unity.UnityNamedPipe()   //The client for the pipe to use. Unity MUST use a NativeNamedPipeClient since its managed client is broken.
+                // logger: logger,                              //The logger. Will Uncomment after when Lachee fixes issue #136 in Lachee/discord-rpc-csharp
+                autoEvents: false,                              //WE will manually invoke events
+                client: new UnityNamedPipe()                    //The client for the pipe to use. Unity MUST use a NativeNamedPipeClient since its managed client is broken.
             );
-            Client.Initialize();                            //Connects the client
-            Debug.Log("[ERP] Client Initialized");
+            client.Initialize();                                //Connects the client
 
+            ERPCSettings.GetSettings();
             UpdateActivity();
         }
-
-        public static void Deinitialize()
-        {
-            Debug.LogError("[ERP] Disposing Discord IPC Client...");
-            Client.Dispose();
-            Client = null;
-            Debug.Log("[ERP] Finished Disconnecting");
-        }
-
         public static void UpdateActivity()
         {
             if (!ERPCWindow.customDetailsState)
@@ -126,25 +139,89 @@ namespace ERPC
                 state = sceneName;
             }
 
-            Client.SetPresence(new RichPresence()
+            if (ERPCWindow.button2IsValid)
             {
-                Details = details,
-                State = state,
-                Assets = new Assets()
+                client.SetPresence(new RichPresence()
                 {
-                    LargeImageKey = largeImageKey,
-                    LargeImageText = largeImageText,
-                    SmallImageKey = smallImageKey,
-                    SmallImageText = smallImageText
-                },
-                Timestamps = new Timestamps
+                    Details = details,
+                    State = state,
+                    Assets = new Assets()
+                    {
+                        LargeImageKey = largeImageKey,
+                        LargeImageText = largeImageText,
+                        SmallImageKey = smallImageKey,
+                        SmallImageText = smallImageText
+                    },
+                    Timestamps = new Timestamps
+                    {
+                        Start = start
+                    },
+                    Buttons = new Button[]
+                    {
+                        new Button() { Label = button1Text, Url = button1Url},
+                        new Button() { Label = button2Text, Url = button2Url}
+                    }
+                });
+            }
+            else if (ERPCWindow.button1IsValid)
+            {
+                client.SetPresence(new RichPresence()
                 {
-                    Start = start
-                }
-            });
+                    Details = details,
+                    State = state,
+                    Assets = new Assets()
+                    {
+                        LargeImageKey = largeImageKey,
+                        LargeImageText = largeImageText,
+                        SmallImageKey = smallImageKey,
+                        SmallImageText = smallImageText
+                    },
+                    Timestamps = new Timestamps
+                    {
+                        Start = start
+                    },
+                    Buttons = new Button[]
+                    {
+                        new Button() { Label = button1Text, Url = button1Url}
+                    }
+                });
+            }
+            else
+            {
+                client.SetPresence(new RichPresence()
+                {
+                    Details = details,
+                    State = state,
+                    Assets = new Assets()
+                    {
+                        LargeImageKey = largeImageKey,
+                        LargeImageText = largeImageText,
+                        SmallImageKey = smallImageKey,
+                        SmallImageText = smallImageText
+                    },
+                    Timestamps = new Timestamps
+                    {
+                        Start = start
+                    }
+                });
+            }
+
             Debug.Log("[ERP] Updated Presence");
 
             ERPCSettings.SaveSettings();
+
+            client.Logger.Level = logLevel;
+        }
+
+        public static DateTime GetTimeStamp()
+        {
+            if (!resetOnSceneChange)
+            {
+                DateTime timeSinceStartup = DateTime.UtcNow.AddSeconds(-EditorApplication.timeSinceStartup);
+                return timeSinceStartup;
+            }
+            DateTime unixTimestamp = DateTime.UtcNow;
+            return unixTimestamp;
         }
     }
 }

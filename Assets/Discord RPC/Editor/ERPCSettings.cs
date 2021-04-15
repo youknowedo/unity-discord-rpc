@@ -18,11 +18,16 @@ namespace ERPC
         public string largeImageText = "Arthur Blue";
         public string smallImageKey = "unity";
         public string smallImageText = "Made with Unity";
-        public bool resetOnSceneChange;
+        public string button1Text = "Itch.io";
+        public string button1Url = "https://tarsier.itch.io/";
+        public string button2Text = "GitHub";
+        public string button2Url = "https://github.com/fenwikk/unity-discord-rpc/";
+        public bool resetOnSceneChange = false;
 
         public ERPCSettings() { }
 
-        public ERPCSettings(string details, string state, string largeImageKey, string largeImageText, string smallImageKey, string smallImageText, bool resetOnSceneChange)
+        public ERPCSettings(string details, string state, string largeImageKey, string largeImageText, string smallImageKey, string smallImageText,
+            string button1Text, string button1Url, string button2Text, string button2Url, bool resetOnSceneChange)
         {
             this.details = details;
             this.state = state;
@@ -31,6 +36,10 @@ namespace ERPC
             this.smallImageKey = smallImageKey;
             this.smallImageText = smallImageText;
             this.resetOnSceneChange = resetOnSceneChange;
+            this.button1Text = button1Text;
+            this.button1Url = button1Url;
+            this.button2Text = button2Text;
+            this.button2Url = button2Url;
         }
 
         public static void GetSettings()
@@ -53,11 +62,15 @@ namespace ERPC
             ERPC.largeImageText = settings.largeImageText;
             ERPC.smallImageKey = settings.smallImageKey;
             ERPC.smallImageText = settings.smallImageText;
+            ERPC.button1Text = settings.button1Text;
+            ERPC.button1Url = settings.button1Url;
+            ERPC.button2Text = settings.button2Text;
+            ERPC.button2Url = settings.button2Url;
         }
 
         public static void SaveSettings()
         {
-            ERPCSettings settings = new ERPCSettings(ERPC.details, ERPC.state, ERPC.largeImageKey, ERPC.largeImageText, ERPC.smallImageKey, ERPC.smallImageText, ERPC.resetOnSceneChange);
+            ERPCSettings settings = new ERPCSettings(ERPC.details, ERPC.state, ERPC.largeImageKey, ERPC.largeImageText, ERPC.smallImageKey, ERPC.smallImageText, ERPC.button1Text, ERPC.button1Url, ERPC.button2Text, ERPC.button2Url, ERPC.resetOnSceneChange);
 
             XmlSerializer serializer = new XmlSerializer(typeof(ERPCSettings));
             var stream = new FileStream(path, FileMode.Create);
