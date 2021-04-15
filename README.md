@@ -13,20 +13,19 @@ While the official C++ library has been deprecated, this library has continued s
 [Unity Asset Store](http://u3d.as/2uii)*
 
 ## Features
-**Unity Discord Rich Presence**
+This library supports all features of the Rich Presence that the official C++ library supports, plus a few extras:
 
-* Shows your game as "Playing" on any Discord user playing your game
-* Fully customizable
-* Launch your game at a party
-* Send a request to join a party
-* Open the Spectate mode of your game
-* Send status changes or actions to be displayed in your profile
-
-**Editor Discord Rich Presence**
-
-* Show off what you're working on to your Discord friends
-* Fully customizable
-* Two buttons with custom links!
+* **Message Queuing**
+* **Threaded Reads**
+* **Managed Pipes**
+* **Error Handling & Error Checking with automatic reconnects**
+* **Events from Discord** (such as presence update and join requests)
+* **Full Rich Presence Implementation** (including Join / Spectate)
+* **Inline Documented** (for all your intelli-sense needs)
+* **Helper Functionality** (eg: AvatarURL generator from Join Requests)
+* **Ghost Prevention** (Tells discord to clear the RP on disposal)
+* **Full Unity3D Editor** (Contains all the tools, inspectors, and helpers for a Unity3D game all in one package).
+* **Editor Rich Presence** (Rich Presence for Unity to show off what you're working on)
 
 ## Documentation
 All the documentation can be found in the [Wiki](https://github.com/fenwikk/unity-discord-rpc/wiki "Unity Discord RPC Wiki")
