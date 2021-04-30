@@ -83,13 +83,6 @@ public class DiscordManager : MonoBehaviour
 	[Tooltip("The current Rich Presence displayed on the Discord Client.")]
 	[SerializeField] private DiscordPresence _currentPresence;
 
-	/// <summary>
-	/// Unsaved Rich Presence waiting to be pushed to Discord.
-	/// </summary>
-	public DiscordPresence UnsavedPresence { get { return _unsavedPresence; } }
-	[Tooltip("Unsaved Rich Presence waiting to be pushed to Discord.")]
-	[SerializeField] private DiscordPresence _unsavedPresence;
-
 	#endregion
 
 	[Header("Handlers and Events")]
@@ -171,6 +164,7 @@ public class DiscordManager : MonoBehaviour
 #if (UNITY_WSA || UNITY_WSA_10_0 || UNITY_STANDALONE) && !DISABLE_DISCORD
 
         if (!active) return;                //Are we allowed to be active?
+        if (!Application.isPlaying) return; //We are not allowed to initialize while in the editor.
 
         //This has a instance already that isn't us
         if (_instance != null && _instance != this)
@@ -189,6 +183,7 @@ public class DiscordManager : MonoBehaviour
 
         //Assign the instance
         _instance = this;
+        DontDestroyOnLoad(this);
 
         //Prepare the logger
         DiscordRPC.Logging.ILogger logger = null;
@@ -269,130 +264,6 @@ public class DiscordManager : MonoBehaviour
 			_client.Dispose();
 			_client = null;
 			Debug.Log("[DRP] Finished Disconnecting");
-		}
-	}
-
-	/// <summary>
-	/// Updates the UnsavedPresence and runs SetPresence() if autoSet is true. 
-	/// </summary>
-	/// <param name="details">What the player is currently doing</param>
-	/// <param name="state">The player's current party status</param>
-	/// <param name="start">Sets a timestamp for the start timer to the current time - Set to true to have an "elapsed" timer</param>
-	/// <param name="endTime">Sets a timestamp for the end timer from the current time plus the value - Send this to have a "remaining" timer</param>
-	/// <param name="largeKey">Keyname of an asset to display</param>
-	/// <param name="largeText">Hover text for the large image</param>
-	/// <param name="smallKey">Keyname of an asset to display</param>
-	/// <param name="smallText">Hover text for the small image</param>
-	/// <param name="partyId">A unique identifier for this party</param>
-	/// <param name="size">Info about the size of the party</param>
-	/// <param name="max">Info about the size of the party</param>
-	/// <param name="join">Unique hash for chat invites and Ask to Join</param>
-	/// <param name="spectate">Unique hash for Spectate button</param>
-	/// <param name="setNow">Pushes the UnsavedPresence to Discord if set to true</param>
-	public void UpdatePresence(string details, string state = null, bool start = false, int endTime = 0, string largeKey = null, string largeText = null,
-		string smallKey = null, string smallText = null, string partyId = null, int size = 0, int max = 0, string join = null,
-		string spectate = null, bool resetCurrent = false, bool setNow = true)
-	{
-		if (resetCurrent)
-        {
-			current.UnsavedPresence.state = state;
-			current.UnsavedPresence.details = details;
-
-			current.UnsavedPresence.startTime = start ? new DiscordTimestamp(Time.realtimeSinceStartup) : DiscordTimestamp.Invalid;
-			current.UnsavedPresence.endTime = endTime > 0 ? new DiscordTimestamp(Time.realtimeSinceStartup + endTime) : DiscordTimestamp.Invalid;
-
-			current.UnsavedPresence.largeAsset = new DiscordAsset() { image = largeKey, tooltip = largeText };
-			current.UnsavedPresence.smallAsset = new DiscordAsset() { image = smallKey, tooltip = smallText };
-
-			current.UnsavedPresence.party = new DiscordParty(partyId, size, max);
-
-			current.UnsavedPresence.secrets.joinSecret = join;
-			current.UnsavedPresence.secrets.spectateSecret = spectate;
-		}
-        else
-        {
-			if (state != null)
-            {
-				current.UnsavedPresence.state = state;
-            }
-			else
-            {
-				current.UnsavedPresence.state = current.CurrentPresence.state;
-			}
-
-			current.UnsavedPresence.details = details;
-
-			if (start == true)
-			{
-				current.UnsavedPresence.startTime = new DiscordTimestamp(Time.realtimeSinceStartup);
-			}
-			else
-			{
-				current.UnsavedPresence.startTime = current.CurrentPresence.startTime;
-			}
-
-			if (endTime > 0)
-			{
-				current.UnsavedPresence.endTime = new DiscordTimestamp(Time.realtimeSinceStartup + endTime);
-			}
-			else
-			{
-				current.UnsavedPresence.endTime = current.CurrentPresence.endTime;
-			}
-
-			if (largeKey != null)
-			{
-				current.UnsavedPresence.largeAsset = new DiscordAsset() { image = largeKey, tooltip = largeText };
-			}
-			else
-			{
-				current.UnsavedPresence.largeAsset = current.CurrentPresence.largeAsset;
-			}
-
-			if (smallKey != null)
-			{
-				current.UnsavedPresence.smallAsset = new DiscordAsset() { image = smallKey, tooltip = smallText };
-			}
-			else
-			{
-				current.UnsavedPresence.smallAsset = current.CurrentPresence.smallAsset;
-			}
-
-			if (size != 0)
-			{
-				current.UnsavedPresence.party = new DiscordParty(partyId, size, max);
-			}
-			else
-			{
-				current.UnsavedPresence.party = current.CurrentPresence.party;
-			}
-
-			if (join != null)
-			{
-				current.UnsavedPresence.secrets.joinSecret = join;
-			}
-			else
-			{
-				current.UnsavedPresence.secrets.joinSecret = current.CurrentPresence.secrets.joinSecret;
-			}
-
-			if (spectate != null)
-			{
-				current.UnsavedPresence.secrets.spectateSecret = spectate;
-			}
-			else
-			{
-				current.UnsavedPresence.secrets.spectateSecret = current.CurrentPresence.secrets.spectateSecret;
-			}
-		}
-
-		if (setNow)
-		{
-			current.SetPresence(current.UnsavedPresence);
-		}
-		else
-		{
-			Debug.Log("[DRP] Presance have been saved and waiting to be pushed to Discord");
 		}
 	}
 

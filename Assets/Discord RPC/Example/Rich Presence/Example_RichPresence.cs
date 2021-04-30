@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,54 +21,61 @@ namespace DiscordRPC.Examples.RichPresence
 		public InputField inputSmallKey;
 		public InputField inputSmallTooltip;
 
-		private DiscordManager current;
+
+		public DiscordPresence presence;
 
 		private void Start()
 		{
-			//Get the current instance of DiscordManager
-			current = GameObject.Find("Discord Manager").GetComponent<DiscordManager>();
-
-
 			//Update the values
-			UpdateFields();
+			UpdateFields(presence);
 
 			//Register to a presence change
-			current.events.OnPresenceUpdate.AddListener((message) =>
+			DiscordManager.current.events.OnPresenceUpdate.AddListener((message) =>
 			{
 				Debug.Log("Received a new presence! Current App: " + message.ApplicationID + ", " + message.Name);
-				UpdateFields();
+				UpdateFields(new DiscordPresence(message.Presence.ToRichPresence()));
 			});
 		}
 
 		public void SendPresence()
 		{
-			current.UpdatePresence
-				(
-					details: inputDetails.text,
-					state: inputState.text,
-
-					start: inputStartTime.isOn,
-					endTime: Int32.Parse(inputEndTime.text),
-
-					largeKey: inputLargeKey.text,
-					largeText: inputLargeTooltip.text,
-					smallKey: inputSmallKey.text,
-					smallText: inputSmallTooltip.text
-				);
-			current.SetPresence(current.UnsavedPresence);
+			UpdatePresence();
+			DiscordManager.current.SetPresence(presence);
 		}
 
-		public void UpdateFields()
+		public void UpdateFields(DiscordPresence presence)
 		{
-			inputState.text = current.UnsavedPresence.state;
-			inputDetails.text = current.UnsavedPresence.details;
+			this.presence = presence;
+			inputState.text = presence.state;
+			inputDetails.text = presence.details;
 
 
-			inputLargeTooltip.text = current.UnsavedPresence.largeAsset.tooltip;
-			inputLargeKey.text = current.UnsavedPresence.largeAsset.image;
+			inputLargeTooltip.text = presence.largeAsset.tooltip;
+			inputLargeKey.text = presence.largeAsset.image;
 
-			inputSmallTooltip.text = current.UnsavedPresence.smallAsset.tooltip;
-			inputSmallKey.text = current.UnsavedPresence.smallAsset.image;
+			inputSmallTooltip.text = presence.smallAsset.tooltip;
+			inputSmallKey.text = presence.smallAsset.image;
+		}
+
+		public void UpdatePresence()
+		{
+			presence.state = inputState.text;
+			presence.details = inputDetails.text;
+			presence.startTime = inputStartTime.isOn ? new DiscordTimestamp(Time.realtimeSinceStartup) : DiscordTimestamp.Invalid;
+
+			presence.largeAsset = new DiscordAsset()
+			{
+				image = inputLargeKey.text,
+				tooltip = inputLargeTooltip.text
+			};
+			presence.smallAsset = new DiscordAsset()
+			{
+				image = inputSmallKey.text,
+				tooltip = inputSmallTooltip.text
+			};
+
+			float duration = float.Parse(inputEndTime.text);
+			presence.endTime = duration > 0 ? new DiscordTimestamp(Time.realtimeSinceStartup + duration) : DiscordTimestamp.Invalid;
 		}
 	}
 }

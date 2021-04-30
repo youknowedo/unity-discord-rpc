@@ -6,5 +6,10 @@
   <largeImageText>Arthur Blue</largeImageText>
   <smallImageKey>unity</smallImageKey>
   <smallImageText>Made with Unity</smallImageText>
-  <resetOnSceneChange>true</resetOnSceneChange>
+  <firstButtonLabel>Itch.io</firstButtonLabel>
+  <firstButtonUrl>https://tarsier.itch.io/</firstButtonUrl>
+  <secondButtonLabel>GitHub</secondButtonLabel>
+  <secondButtonUrl>https://github.com/fenwikk/unity-discord-rpc/</secondButtonUrl>
+  <resetOnSceneChange>false</resetOnSceneChange>
+  <autoUpdate>true</autoUpdate>
 </ERPCSettings>

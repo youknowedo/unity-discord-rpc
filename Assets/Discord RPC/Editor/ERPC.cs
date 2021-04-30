@@ -25,14 +25,16 @@ namespace ERPC
         public static string largeImageText = "Arthur Blue";
         public static string smallImageKey = "unity";
         public static string smallImageText = "Made with Unity";
-        public static string button1Text = "Itch.io";
-        public static string button1Url = "https://tarsier.itch.io/";
-        public static string button2Text = "GitHub";
-        public static string button2Url = "https://github.com/fenwikk/unity-discord-rpc/";
+        public static string firstButtonLabel = "Itch.io";
+        public static string firstButtonUrl = "https://tarsier.itch.io/";
+        public static string secondButtonLabel = "GitHub";
+        public static string secondButtonUrl = "https://github.com/fenwikk/unity-discord-rpc/";
 
         public static DateTime start;
 
+        public static bool enabled;
         public static bool resetOnSceneChange = false;
+        public static bool autoUpdate = false;
 
         public static DiscordPipe targetPipe = DiscordPipe.FirstAvailable;
 
@@ -67,15 +69,14 @@ namespace ERPC
 
             start = GetTimeStamp();
 
-            Initialize();
+            CreateClient();
+            ERPCSettings.GetSettings();
+            if (enabled) Initialize();
         }
 
         static void Update()
         {
-            if (!EditorApplication.isPlaying == false && client == null)
-            {
-                Initialize();
-            }
+            if (!EditorApplication.isPlaying == false && !client.IsInitialized && enabled) Initialize();
 
             if (sceneName != SceneManager.GetActiveScene().name)
             {
@@ -83,19 +84,21 @@ namespace ERPC
                 SceneLoaded();
             }
 
-            client.Logger.Level = logLevel;
+            if (enabled) client.Logger.Level = logLevel;
 
             projectName = Application.productName;
             sceneName = SceneManager.GetActiveScene().name;
 
-            if (EditorApplication.timeSinceStartup >= lastEdit + 5 && EditorApplication.timeSinceStartup <= lastEdit + 10)
+            if (EditorApplication.timeSinceStartup >= lastEdit + 5 && EditorApplication.timeSinceStartup <= lastEdit + 10 && enabled)
             {
                 UpdateActivity();
                 
-                ERPCWindow.status = "Up to date";
+                ERPCWindow.canUpdate = false;
 
                 lastEdit = 0f;
             }
+
+            if (!enabled && client.IsInitialized) Dispose();
         }
 
         static void SceneLoaded(Scene scene = new Scene(), LoadSceneMode mode = new LoadSceneMode())
@@ -108,9 +111,9 @@ namespace ERPC
             UpdateActivity();
         }
 
-        public static void Initialize()
+        public static void CreateClient()
         {
-            Debug.Log("[ERP] Init");
+            Debug.Log("[ERP] Creating Client");
 
             //Prepare the logger
             DiscordRPC.Logging.ILogger logger = null;
@@ -126,11 +129,24 @@ namespace ERPC
                 autoEvents: false,                              //WE will manually invoke events
                 client: new UnityNamedPipe()                    //The client for the pipe to use. Unity MUST use a NativeNamedPipeClient since its managed client is broken.
             );
+        }
+
+        public static void Initialize()
+        {
+            Debug.Log("[ERP] Initialize");
+
             client.Initialize();                                //Connects the client
 
             ERPCSettings.GetSettings();
             UpdateActivity();
         }
+
+        public static void Dispose()
+        {
+            Debug.Log("[ERP] Disposing Client");
+            client.Dispose();
+        }
+
         public static void UpdateActivity()
         {
             if (!ERPCWindow.customDetailsState)
@@ -139,7 +155,7 @@ namespace ERPC
                 state = sceneName;
             }
 
-            if (ERPCWindow.button2IsValid)
+            if (ERPCWindow.secondButtonIsValid)
             {
                 client.SetPresence(new RichPresence()
                 {
@@ -158,12 +174,12 @@ namespace ERPC
                     },
                     Buttons = new Button[]
                     {
-                        new Button() { Label = button1Text, Url = button1Url},
-                        new Button() { Label = button2Text, Url = button2Url}
+                        new Button() { Label = firstButtonLabel, Url = firstButtonUrl},
+                        new Button() { Label = secondButtonLabel, Url = secondButtonUrl}
                     }
                 });
             }
-            else if (ERPCWindow.button1IsValid)
+            else if (ERPCWindow.firstButtonIsValid)
             {
                 client.SetPresence(new RichPresence()
                 {
@@ -182,7 +198,7 @@ namespace ERPC
                     },
                     Buttons = new Button[]
                     {
-                        new Button() { Label = button1Text, Url = button1Url}
+                        new Button() { Label = firstButtonLabel, Url = firstButtonUrl}
                     }
                 });
             }

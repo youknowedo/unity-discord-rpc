@@ -12,14 +12,14 @@ namespace ERPC
         private static ERPCWindow _window;
         public static bool customDetailsState = false;
 
-        public static bool button1IsValid = false;
-        public static bool button2IsValid = false;
+        public static bool firstButtonIsValid = false;
+        public static bool secondButtonIsValid = false;
 
         public static bool error = false;
 
-        public static string status = "Up to Date";
+        public static bool canUpdate { get; set; }
 
-        public GUIStyle styling = new GUIStyle();
+        public GUIStyle heading;
 
         [MenuItem("Window/Editor Rich Presence")]
         private static void Init()
@@ -27,24 +27,43 @@ namespace ERPC
             _window = (ERPCWindow)GetWindow(typeof(ERPCWindow), false, "Editor Rich Presence");
             _window.Show();
         }
-        private void OnGUI()
+
+        public void OnGUI()
         {
-            styling.margin = new RectOffset(10, 10, 10, 10);
+            #region Toolbar
+
+            EditorGUILayout.BeginHorizontal("Toolbar", GUILayout.ExpandWidth(true));
+
+            if (ERPC.enabled) ERPC.enabled = GUILayout.Toggle(ERPC.enabled, "Turn Off", "ToolbarButton");
+            if (!ERPC.enabled) ERPC.enabled = GUILayout.Toggle(ERPC.enabled, "Turn On", "ToolbarButton");
+
+            GUILayout.FlexibleSpace();
 
             EditorGUI.BeginChangeCheck();
+            EditorGUI.BeginDisabledGroup(!ERPC.enabled);
 
-            GUILayout.BeginVertical(styling);
+            ERPC.resetOnSceneChange = GUILayout.Toggle(ERPC.resetOnSceneChange, "Reset timestap on scene change", "ToolbarButton");
+            ERPC.autoUpdate = GUILayout.Toggle(ERPC.autoUpdate, "Auto Update", "ToolbarButton");
+
+            GUILayout.Space(5);
+
+            EditorGUI.BeginDisabledGroup(!canUpdate);
+            if (GUILayout.Button("Update", "ToolbarButton"))
+            {
+                ERPC.UpdateActivity();
+
+                canUpdate = false;
+
+                ERPC.lastEdit = 0f;
+            }
+            EditorGUI.EndDisabledGroup();
+            EditorGUILayout.EndHorizontal();
+
+            #endregion
+
+            GUILayout.BeginVertical();
 
             #region Info
-
-            GUILayout.Label("Status: " + status);
-
-            GUILayout.Space(10);
-
-            GUILayout.Label("Current Project: " + ERPC.projectName);
-            GUILayout.Label("Current Scene: " + ERPC.sceneName);
-
-            GUILayout.Space(20);
 
             GUILayout.Label("Editor Application ID");
             ERPC.applicationID = GUILayout.TextField(ERPC.applicationID);
@@ -57,16 +76,15 @@ namespace ERPC
 
             customDetailsState = EditorGUILayout.ToggleLeft("Custom Details/State", customDetailsState);
 
-            if (customDetailsState)
-            {
-                GUILayout.Label("Details");
-                ERPC.details = GUILayout.TextField(ERPC.details);
+            EditorGUI.BeginDisabledGroup(!customDetailsState);
+            GUILayout.Label("Details");
+            ERPC.details = GUILayout.TextField(ERPC.details);
 
-                GUILayout.Label("State");
-                ERPC.state = GUILayout.TextField(ERPC.state);
-            }
+            GUILayout.Label("State");
+            ERPC.state = GUILayout.TextField(ERPC.state);
+            EditorGUI.EndDisabledGroup();
 
-            GUILayout.Space(10);
+            GUILayout.Space(20);
 
             #endregion
 
@@ -78,7 +96,7 @@ namespace ERPC
             ERPC.largeImageKey = GUILayout.TextField(ERPC.largeImageKey, GUILayout.MaxWidth(120f));
 
             GUILayout.Label(new GUIContent("Text", "(e.g. Game Name)"), GUILayout.MaxWidth(30f));
-            ERPC.largeImageText = GUILayout.TextField(ERPC.largeImageText, GUILayout.MaxWidth(120f));
+            ERPC.largeImageText = GUILayout.TextField(ERPC.largeImageText);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
@@ -89,7 +107,7 @@ namespace ERPC
             ERPC.smallImageKey = GUILayout.TextField(ERPC.smallImageKey, GUILayout.MaxWidth(120f));
 
             GUILayout.Label(new GUIContent("Text", "(e.g. \"Made with Unity\")"), GUILayout.MaxWidth(30f));
-            ERPC.smallImageText = GUILayout.TextField(ERPC.smallImageText, GUILayout.MaxWidth(120f));
+            ERPC.smallImageText = GUILayout.TextField(ERPC.smallImageText);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(20);
@@ -100,87 +118,78 @@ namespace ERPC
 
             CheckButtons();
 
-            if (button1IsValid) GUILayout.Label("Button 1", EditorStyles.boldLabel);
+            if (firstButtonIsValid) GUILayout.Label("Button 1", EditorStyles.boldLabel);
             else GUILayout.Label("Button", EditorStyles.boldLabel);
 
             GUILayout.BeginHorizontal();
             GUILayout.Label(new GUIContent("Text", "(e.g. \"Itch.io\" or \"Steam\")"), GUILayout.MaxWidth(30f));
-            ERPC.button1Text = GUILayout.TextField(ERPC.button1Text, GUILayout.MaxWidth(120f));
+            ERPC.firstButtonLabel = GUILayout.TextField(ERPC.firstButtonLabel, GUILayout.MaxWidth(120f));
 
             GUILayout.Label(new GUIContent("URL", "(e.g. Itch.io or Steam URL)"), GUILayout.MaxWidth(30f));
-            ERPC.button1Url = GUILayout.TextField(ERPC.button1Url, GUILayout.MaxWidth(120f));
+            ERPC.firstButtonUrl = GUILayout.TextField(ERPC.firstButtonUrl);
             GUILayout.EndHorizontal();
 
-            ButtonErrors(ERPC.button1Text, ERPC.button1Url);
+            ButtonErrors(ERPC.firstButtonLabel, ERPC.firstButtonUrl);
 
             GUILayout.Space(10);
 
-            if (button1IsValid)
+            if (firstButtonIsValid)
             {
                 GUILayout.Label("Button 2", EditorStyles.boldLabel);
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(new GUIContent("Text", "(e.g. \"GitHub\")"), GUILayout.MaxWidth(30f));
-                ERPC.button2Text = GUILayout.TextField(ERPC.button2Text, GUILayout.MaxWidth(120f));
+                ERPC.secondButtonLabel = GUILayout.TextField(ERPC.secondButtonLabel, GUILayout.MaxWidth(120f));
 
                 GUILayout.Label(new GUIContent("URL", "(e.g. GitHub URL)"), GUILayout.MaxWidth(30f));
-                ERPC.button2Url = GUILayout.TextField(ERPC.button2Url, GUILayout.MaxWidth(120f));
+                ERPC.secondButtonUrl = GUILayout.TextField(ERPC.secondButtonUrl);
                 GUILayout.EndHorizontal();
 
-                ButtonErrors(ERPC.button1Text, ERPC.button1Url);
+                ButtonErrors(ERPC.firstButtonLabel, ERPC.firstButtonUrl);
             }
 
             GUILayout.Space(20);
 
             #endregion
 
-            ERPC.resetOnSceneChange = EditorGUILayout.ToggleLeft("Reset timestap on scene change", ERPC.resetOnSceneChange);
-
-            GUILayout.Space(10);
-
             if (EditorGUI.EndChangeCheck())
             {
                 ERPC.lastEdit = EditorApplication.timeSinceStartup;
-                status = "Updating...";
+                canUpdate = true;
             }
 
-            if (GUILayout.Button("Update Presence"))
-            {
-                ERPC.UpdateActivity();
-
-                status = "Up to date";
-
-                ERPC.lastEdit = 0f;
-            }
+            EditorGUI.EndDisabledGroup();
 
             GUILayout.EndVertical();
         }
 
-        public bool ButtonIsValid(string buttonText, string buttonUrl) => ButtonUrlIsValid(buttonUrl) && !string.IsNullOrEmpty(buttonText);
+        public bool ButtonIsValid(string buttonLabel, string buttonUrl) => ButtonUrlIsValid(buttonUrl) && !string.IsNullOrEmpty(buttonLabel);
 
         public void CheckButtons()
         {
-            button1IsValid = ButtonIsValid(ERPC.button1Text, ERPC.button1Url);
-            if (button1IsValid)
+            firstButtonIsValid = ButtonIsValid(ERPC.firstButtonLabel, ERPC.firstButtonUrl);
+            if (firstButtonIsValid)
             {
-                button2IsValid = ButtonIsValid(ERPC.button2Text, ERPC.button2Url);
+                secondButtonIsValid = ButtonIsValid(ERPC.secondButtonLabel, ERPC.secondButtonUrl);
             }
             else
             {
-                button2IsValid = false;
-            } 
+                secondButtonIsValid = false;
+            }
         }
 
-        private void ButtonErrors(string buttonText, string buttonUrl)
+        private void ButtonErrors(string buttonLabel, string buttonUrl)
         {
             GUI.contentColor = Color.red;
 
-            if (!ButtonUrlIsValid(buttonUrl) && !string.IsNullOrEmpty(buttonText))
+            if (!ButtonUrlIsValid(buttonUrl) && !string.IsNullOrEmpty(buttonLabel))
             {
                 GUILayout.Label("URL is not valid!", EditorStyles.boldLabel);
+                canUpdate = false;
             }
-            else if (string.IsNullOrEmpty(buttonText) && !string.IsNullOrEmpty(buttonUrl))
+            else if (string.IsNullOrEmpty(buttonLabel) && !string.IsNullOrEmpty(buttonUrl))
             {
                 GUILayout.Label("Button text cannot be empty!", EditorStyles.boldLabel);
+                canUpdate = false;
             }
 
             GUI.contentColor = Color.white;
