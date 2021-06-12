@@ -4,6 +4,8 @@
 ======
 <br />
 
+Fork of [Lachee/discord-rpc-csharp](https://github.com/Lachee/discord-rpc-csharp)
+
 This is a C# implementation of the Discord RPC library which was originally written in C++. This avoids having to use the official C++ and instead provides a managed way of using the Rich Presence within Unity.
 
 This package contains all the tools, inspectors and helpers for a Unity3D game all in one package including a fully customizable Unity Editor Client to show off what your working on in Unity! 
