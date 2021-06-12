@@ -1,3 +1,4 @@
+#if UNITY_EDITOR && UNITY_STANDALONE
 using System;
 using System.IO;
 using System.Collections;
@@ -24,11 +25,12 @@ namespace ERPC
         public string secondButtonUrl = "https://github.com/fenwikk/unity-discord-rpc/";
         public bool resetOnSceneChange = false;
         public bool autoUpdate = true;
+        public bool enableOnStartup = false;
 
         public ERPCSettings() { }
 
         public ERPCSettings(string details, string state, string largeImageKey, string largeImageText, string smallImageKey, string smallImageText,
-            string firstButtonLabel, string firstButtonUrl, string secondButtonLabel, string secondButtonUrl, bool resetOnSceneChange, bool autoUpdate)
+            string firstButtonLabel, string firstButtonUrl, string secondButtonLabel, string secondButtonUrl, bool resetOnSceneChange, bool autoUpdate, bool enableOnStartup)
         {
             this.details = details;
             this.state = state;
@@ -42,6 +44,7 @@ namespace ERPC
             this.secondButtonLabel = secondButtonLabel;
             this.secondButtonUrl = secondButtonUrl;
             this.autoUpdate = autoUpdate;
+            this.enableOnStartup = enableOnStartup;
         }
 
         public static void GetSettings()
@@ -69,12 +72,13 @@ namespace ERPC
             ERPC.secondButtonLabel = settings.secondButtonLabel;
             ERPC.secondButtonUrl = settings.secondButtonUrl;
             ERPC.autoUpdate = settings.autoUpdate;
+            ERPC.enableOnStartup = settings.enableOnStartup;
         }
 
         public static void SaveSettings()
         {
             ERPCSettings settings = new ERPCSettings(ERPC.details, ERPC.state, ERPC.largeImageKey, ERPC.largeImageText, ERPC.smallImageKey, ERPC.smallImageText, 
-                ERPC.firstButtonLabel, ERPC.firstButtonUrl, ERPC.secondButtonLabel, ERPC.secondButtonUrl, ERPC.resetOnSceneChange, ERPC.autoUpdate);
+                ERPC.firstButtonLabel, ERPC.firstButtonUrl, ERPC.secondButtonLabel, ERPC.secondButtonUrl, ERPC.resetOnSceneChange, ERPC.autoUpdate, ERPC.enableOnStartup);
 
             XmlSerializer serializer = new XmlSerializer(typeof(ERPCSettings));
             var stream = new FileStream(path, FileMode.Create);
@@ -83,3 +87,4 @@ namespace ERPC
         }
     }
 }
+#endif

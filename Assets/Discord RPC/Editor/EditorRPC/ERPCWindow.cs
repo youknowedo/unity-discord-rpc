@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+﻿#if UNITY_EDITOR && UNITY_STANDALONE
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,19 +30,17 @@ namespace ERPC
 
         public void OnGUI()
         {
-            #region Toolbar
+#region Toolbar
 
             EditorGUILayout.BeginHorizontal("Toolbar", GUILayout.ExpandWidth(true));
 
-            if (ERPC.enabled) ERPC.enabled = GUILayout.Toggle(ERPC.enabled, "Turn Off", "ToolbarButton");
-            if (!ERPC.enabled) ERPC.enabled = GUILayout.Toggle(ERPC.enabled, "Turn On", "ToolbarButton");
 
-            GUILayout.FlexibleSpace();
+            ERPC.enableOnStartup = GUILayout.Toggle(ERPC.enableOnStartup, "Enable on Startup", "ToolbarButton");
 
             EditorGUI.BeginChangeCheck();
-            EditorGUI.BeginDisabledGroup(!ERPC.enabled);
 
-            ERPC.resetOnSceneChange = GUILayout.Toggle(ERPC.resetOnSceneChange, "Reset timestap on scene change", "ToolbarButton");
+            GUILayout.FlexibleSpace();
+            
             ERPC.autoUpdate = GUILayout.Toggle(ERPC.autoUpdate, "Auto Update", "ToolbarButton");
 
             GUILayout.Space(5);
@@ -59,20 +57,20 @@ namespace ERPC
             EditorGUI.EndDisabledGroup();
             EditorGUILayout.EndHorizontal();
 
-            #endregion
+#endregion
 
             GUILayout.BeginVertical();
 
-            #region Info
+#region Info
 
             GUILayout.Label("Editor Application ID");
             ERPC.applicationID = GUILayout.TextField(ERPC.applicationID);
 
             GUILayout.Space(10);
 
-            #endregion
+#endregion
 
-            #region Details/State
+#region Details/State
 
             customDetailsState = EditorGUILayout.ToggleLeft("Custom Details/State", customDetailsState);
 
@@ -86,9 +84,11 @@ namespace ERPC
 
             GUILayout.Space(20);
 
-            #endregion
+#endregion
 
-            #region Images
+            ERPC.resetOnSceneChange = EditorGUILayout.ToggleLeft("Reset timestap on scene change", ERPC.resetOnSceneChange);
+
+#region Images
 
             GUILayout.Label("Large Image", EditorStyles.boldLabel);
             GUILayout.BeginHorizontal();
@@ -112,9 +112,9 @@ namespace ERPC
 
             GUILayout.Space(20);
 
-            #endregion
+#endregion
 
-            #region Buttons
+#region Buttons
 
             CheckButtons();
 
@@ -149,15 +149,22 @@ namespace ERPC
 
             GUILayout.Space(20);
 
-            #endregion
+#endregion
+
+            if (ERPC.enabled)
+            {
+                ERPC.enabled = GUILayout.Toggle(ERPC.enabled, "Shutdown", "Button");
+            }
+            else
+            {
+                ERPC.enabled = GUILayout.Toggle(ERPC.enabled, "Start", "Button");
+            }
 
             if (EditorGUI.EndChangeCheck())
             {
                 ERPC.lastEdit = EditorApplication.timeSinceStartup;
                 canUpdate = true;
             }
-
-            EditorGUI.EndDisabledGroup();
 
             GUILayout.EndVertical();
         }

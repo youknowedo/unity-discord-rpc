@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+﻿#if UNITY_EDITOR && UNITY_STANDALONE
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -33,6 +33,7 @@ namespace ERPC
         public static DateTime start;
 
         public static bool enabled;
+        public static bool enableOnStartup;
         public static bool resetOnSceneChange = false;
         public static bool autoUpdate = false;
 
@@ -69,14 +70,14 @@ namespace ERPC
 
             start = GetTimeStamp();
 
-            CreateClient();
+            if (!EditorApplication.isPlaying) CreateClient();
             ERPCSettings.GetSettings();
-            if (enabled) Initialize();
+            if (enableOnStartup) enabled = true;; 
         }
 
         static void Update()
         {
-            if (!EditorApplication.isPlaying == false && !client.IsInitialized && enabled) Initialize();
+            if (!EditorApplication.isPlaying && !client.IsInitialized && enabled) Initialize();
 
             if (sceneName != SceneManager.GetActiveScene().name)
             {
@@ -98,7 +99,7 @@ namespace ERPC
                 lastEdit = 0f;
             }
 
-            if (!enabled && client.IsInitialized) Dispose();
+            if (!enabled && !client.IsDisposed) Dispose();
         }
 
         static void SceneLoaded(Scene scene = new Scene(), LoadSceneMode mode = new LoadSceneMode())
@@ -130,9 +131,25 @@ namespace ERPC
                 client: new UnityNamedPipe()                    //The client for the pipe to use. Unity MUST use a NativeNamedPipeClient since its managed client is broken.
             );
         }
-
         public static void Initialize()
         {
+            Debug.Log("[ERP] Creating Client"); 
+
+            //Prepare the logger
+            DiscordRPC.Logging.ILogger logger = null;
+
+            //Update the logger to the unity logger
+            if (Debug.isDebugBuild) logger = new FileLogger("discordrpc.log") { Level = logLevel };
+            if (Application.isEditor) logger = new UnityLogger() { Level = logLevel };
+
+            client = new DiscordRpcClient(
+                applicationID,                                  //The Discord Application ID            
+                pipe: (int)targetPipe,                          //The target pipe to connect too
+                                                                // logger: logger,                              //The logger. Will Uncomment after when Lachee fixes issue #136 in Lachee/discord-rpc-csharp
+                autoEvents: false,                              //WE will manually invoke events
+                client: new UnityNamedPipe()                    //The client for the pipe to use. Unity MUST use a NativeNamedPipeClient since its managed client is broken.
+            );
+
             Debug.Log("[ERP] Initialize");
 
             client.Initialize();                                //Connects the client
