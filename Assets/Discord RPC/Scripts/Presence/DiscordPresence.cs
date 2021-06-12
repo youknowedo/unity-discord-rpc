@@ -48,8 +48,7 @@ public class DiscordPresence
 	/// The buttons used for the presence.
 	/// </summary>
 	[Tooltip("The buttons used for the presence")]
-	public DiscordButton firstButton;
-	public DiscordButton secondButton;
+	public DiscordButton[] buttons;
 
 	[Header("Party Details")]
 
@@ -109,23 +108,23 @@ public class DiscordPresence
 
 			if (presence.HasButtons())
 			{
-				this.firstButton = new DiscordButton()
+				this.buttons = new DiscordButton[]
 				{
-					label = presence.Buttons[0].Label,
-					url = presence.Buttons[0].Url,
-				};
-
-
-				this.secondButton = new DiscordButton()
-				{
-					label = presence.Buttons[1].Label,
-					url = presence.Buttons[2].Url,
+					new DiscordButton()
+					{
+						label = presence.Buttons[0].Label,
+						url = presence.Buttons[0].Url,
+					},
+					new DiscordButton()
+					{
+						label = presence.Buttons[1].Label,
+						url = presence.Buttons[1].Url,
+					}
 				};
 			}
 			else
 			{
-				this.firstButton = new DiscordButton();
-				this.secondButton = new DiscordButton();
+				this.buttons = new DiscordButton[0];
 			}
 
 
@@ -144,8 +143,7 @@ public class DiscordPresence
 			this.secrets = new DiscordSecrets();
 			this.smallAsset = new DiscordAsset();
 			this.largeAsset = new DiscordAsset();
-			this.firstButton = new DiscordButton();
-			this.secondButton = new DiscordButton();
+			this.buttons = new DiscordButton[0];
 			this.startTime = DiscordTimestamp.Invalid;
 			this.endTime = DiscordTimestamp.Invalid;
 		}
@@ -182,6 +180,15 @@ public class DiscordPresence
 			presence.Timestamps = new DiscordRPC.Timestamps();
 			if (startTime.IsValid()) presence.Timestamps.Start = startTime.GetDateTime();
 			if (endTime.IsValid()) presence.Timestamps.End = endTime.GetDateTime();
+		}
+
+		if (buttons.Length > 0)
+		{
+			presence.Buttons = new DiscordRPC.Button[]
+			{
+				new DiscordRPC.Button { Label = buttons[0].label, Url = buttons[0].url},
+				new DiscordRPC.Button { Label = buttons[1].label, Url = buttons[1].url}
+			};
 		}
 
 		return presence;
